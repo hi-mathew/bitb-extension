@@ -1,48 +1,27 @@
-(async function () {
-  try {
-    const iframes = document.getElementsByTagName("iframe");
-    let iframeCount = iframes.length;
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "extractAndDetectBitB") {
+    console.log("[BitB Extension] Message received: extractAndDetectBitB");
 
-    let hasLoginForm = 0;
-    let windowRatio = 0;
+    try {
+      const features = extractBitBFeatures(); // Make sure featureExtractor.js is loaded
+      console.log("[BitB Extension] Extracted features:", features);
 
-    if (iframeCount > 0) {
-      const iframe = iframes[0];
-      const rect = iframe.getBoundingClientRect();
-      windowRatio = (rect.width * rect.height) / (window.innerWidth * window.innerHeight);
+      fetch("http://localhost:8080/api/bitb/detect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ features })
+      })
+        .then(res => res.json())
+        .then(result => {
+          console.log("[BitB Extension] Detection result:", result);
+          alert(`🛡️ Prediction: ${result.message} (Score: ${result.score})`);
+        })
+        .catch(err => {
+          console.error("[BitB Extension] Detection failed:", err);
+        });
 
-      try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        const inputs = iframeDoc.getElementsByTagName("input");
-        for (let i = 0; i < inputs.length; i++) {
-          if (inputs[i].type.toLowerCase() === "password") {
-            hasLoginForm = 1;
-            break;
-          }
-        }
-      } catch (e) {
-        // cross-origin access blocked
-        console.warn("Iframe analysis skipped (CORS).");
-      }
+    } catch (err) {
+      console.error("[BitB Extension] Feature extraction failed:", err);
     }
-
-    const features = [windowRatio, iframeCount, hasLoginForm];
-
-    const response = await fetch("http://localhost:8080/api/bitb/detect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ features: features })
-    });
-
-    const result = await response.json();
-
-    if (result.prediction === 1) {
-      alert("⚠️ BitB Phishing Detected!\n" + result.message);
-    } else {
-      console.log("✅ Page looks clean: ", result.message);
-    }
-
-  } catch (err) {
-    console.error("BitB detection failed:", err);
   }
-})();
+});
