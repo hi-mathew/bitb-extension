@@ -3,7 +3,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "extractAndDetectBitB") {
     try {
       const features = extractBitBFeatures();
-
+      console.log("✅ Extracted Features:", features);
+      console.log("✅ Feature Length:", features.length); 
       sendFeaturesToBackend(features)
         .then(result => {
           displayDetectionBanner(result.prediction, result.score);

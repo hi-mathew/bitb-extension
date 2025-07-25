@@ -6,7 +6,7 @@ function extractBitBFeatures() {
   const hasIframe = iframes.length > 0 ? 1.0 : 0.0;
   features.push(hasIframe);
 
-  // Feature 2: windowSizeRatio (window.innerWidth * height) / screen size
+  // Feature 2: windowSizeRatio (window area / screen area)
   const screenArea = window.screen.width * window.screen.height;
   const windowArea = window.innerWidth * window.innerHeight;
   const windowSizeRatio = screenArea > 0 ? windowArea / screenArea : 0.0;
@@ -41,36 +41,56 @@ function extractBitBFeatures() {
   const hasInputFields = inputFields.length > 0 ? 1.0 : 0.0;
   features.push(hasInputFields);
 
-  // Feature 6: hasLoginKeywords in the DOM
+  // Feature 6: hasLoginKeywords in body text
   const loginKeywords = ["login", "sign in", "user", "username", "password"];
   const pageText = document.body.innerText.toLowerCase();
   const hasLoginKeywords = loginKeywords.some(keyword => pageText.includes(keyword)) ? 1.0 : 0.0;
   features.push(hasLoginKeywords);
 
-  // ✅ Feature 7: urlMismatch (actual logic, no forced value)
+  // Feature 7: urlMismatch (login form posts to different domain)
   let urlMismatch = 0.0;
-  try {
-    for (let i = 0; i < iframes.length; i++) {
-      const src = iframes[i].src;
-      if (src) {
-        const frameHostname = new URL(src).hostname;
-        const pageHostname = window.location.hostname;
-        if (frameHostname !== pageHostname) {
-          urlMismatch = 1.0;
-          break;
-        }
-      }
+  const forms = document.querySelectorAll("form");
+  forms.forEach(form => {
+    const action = form.getAttribute("action");
+    if (action && !action.startsWith(window.location.origin)) {
+      urlMismatch = 1.0;
     }
-  } catch (e) {
-    // If any iframe causes an exception (e.g., invalid URL), assume mismatch
-    urlMismatch = 1.0;
-  }
+  });
   features.push(urlMismatch);
 
-  // Feature 8: hostnameEntropy (simple length-based entropy)
+  // Feature 8: hostnameEntropy (how random or unusual the domain is)
   const hostname = window.location.hostname;
   const entropy = hostname.length > 0 ? uniqueChars(hostname) / hostname.length : 0.0;
   features.push(Number(entropy.toFixed(2)));
+
+  // Feature 9: suspiciousKeywordScore in URL (e.g., "login", "secure", "bank")
+  const suspiciousUrlKeywords = ["login", "secure", "bank", "signin", "verify"];
+  const currentUrl = window.location.href.toLowerCase();
+  const suspiciousCount = suspiciousUrlKeywords.filter(k => currentUrl.includes(k)).length;
+  const suspiciousKeywordScore = suspiciousCount > 0 ? 1.0 : 0.0;
+  features.push(suspiciousKeywordScore);
+
+  // Feature 10: isPopularSite (matches against a whitelist of popular domains)
+  const popularSites = [
+    "google.com", "facebook.com", "apple.com", "microsoft.com", "amazon.com",
+    "github.com", "linkedin.com", "twitter.com", "instagram.com", "netflix.com"
+  ];
+  const isPopularSite = popularSites.some(domain => hostname.endsWith(domain)) ? 1.0 : 0.0;
+  features.push(isPopularSite);
+
+  // Feature 11: loginFormActionMismatch (login form action points to external domain)
+  let loginFormMismatch = 0.0;
+  const loginForm = Array.from(forms).find(form => {
+    const inputs = form.querySelectorAll("input[type='password']");
+    return inputs.length > 0;
+  });
+  if (loginForm) {
+    const action = loginForm.getAttribute("action");
+    if (action && !action.includes(window.location.hostname)) {
+      loginFormMismatch = 1.0;
+    }
+  }
+  features.push(loginFormMismatch);
 
   return features;
 }
