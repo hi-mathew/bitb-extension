@@ -71,12 +71,30 @@ function extractBitBFeatures() {
   features.push(suspiciousKeywordScore);
 
   // Feature 10: isPopularSite (matches against a whitelist of popular domains)
-  const popularSites = [
-    "google.com", "facebook.com", "apple.com", "microsoft.com", "amazon.com",
-    "github.com", "linkedin.com", "twitter.com", "instagram.com", "netflix.com"
-  ];
-  const isPopularSite = popularSites.some(domain => hostname.endsWith(domain)) ? 1.0 : 0.0;
-  features.push(isPopularSite);
+  const knownPopularSites = [
+  "google.com",
+  "accounts.google.com",
+  "mail.google.com",
+  "facebook.com",
+  "www.facebook.com",
+  "linkedin.com",
+  "www.linkedin.com",
+  "apple.com",
+  "amazon.com",
+  "microsoft.com",
+  "live.com"
+];
+
+function isPopularDomain(url) {
+  try {
+    const hostname = new URL(url).hostname;
+    return knownPopularSites.some(domain => hostname.endsWith(domain));
+  } catch {
+    return false;
+  }
+}
+
+  features.push(isPopularDomain(window.location.href) ? 1.0 : 0.0);
 
   // Feature 11: loginFormActionMismatch (login form action points to external domain)
   let loginFormMismatch = 0.0;

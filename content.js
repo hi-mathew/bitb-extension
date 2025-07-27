@@ -54,17 +54,27 @@ function displayDetectionBanner(prediction, score) {
   banner.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
   banner.style.fontFamily = "sans-serif";
 
-  if (prediction === 1) {
+  const percentage = (score * 100).toFixed(1);
+  let message = "";
+
+  // ✅ Use predicted class from model
+  if (prediction === 2) {
     banner.style.backgroundColor = "#d32f2f"; // red
-    banner.textContent = `🚨 BitB Attack Detected (Score: ${score})`;
+    message = `🚨 BitB Attack Detected (Score: ${percentage}%)`;
+  } else if (prediction === 1) {
+    banner.style.backgroundColor = "#f57c00"; // orange
+    message = `⚠️ Suspicious Behavior Detected (Score: ${percentage}%)`;
   } else {
     banner.style.backgroundColor = "#388e3c"; // green
-    banner.textContent = `🛡️ Page looks clean (Score: ${score})`;
+    message = `✅ Page Verified as Safe (Score: ${percentage}%)`;
   }
 
+  banner.textContent = message;
   document.body.appendChild(banner);
 
   setTimeout(() => {
     banner.remove();
-  }, 5000); // remove after 5 seconds
+  }, 5000);
 }
+
+
