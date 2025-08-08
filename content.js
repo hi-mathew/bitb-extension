@@ -60,13 +60,13 @@ function displayDetectionBanner(prediction, score) {
   // ✅ Use predicted class from model
   if (prediction === 2) {
     banner.style.backgroundColor = "#d32f2f"; // red
-    message = `🚨 BitB Attack Detected (Score: ${percentage}%)`;
+    message = `🚨 BitB Attack Detected`;
   } else if (prediction === 1) {
     banner.style.backgroundColor = "#f57c00"; // orange
-    message = `⚠️ Suspicious Behavior Detected (Score: ${percentage}%)`;
+    message = `⚠️ Suspicious Behavior Detected`;
   } else {
     banner.style.backgroundColor = "#388e3c"; // green
-    message = `✅ Page Verified as Safe (Score: ${percentage}%)`;
+    message = `✅ Page Verified as Safe`;
   }
 
   banner.textContent = message;
